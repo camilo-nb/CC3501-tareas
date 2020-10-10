@@ -27,16 +27,12 @@ class Controller():
 
         elif (key == glfw.KEY_UP or key == glfw.KEY_W) and action == glfw.PRESS:
             self.__snake.new_mov = "w"
-            print("w")
             
         elif (key == glfw.KEY_LEFT or key == glfw.KEY_A) and action == glfw.PRESS:
             self.__snake.new_mov = "a"
-            print("a")
             
         elif (key == glfw.KEY_DOWN or key == glfw.KEY_S) and action == glfw.PRESS:
             self.__snake.new_mov = "s"
-            print("s")
             
         elif (key == glfw.KEY_RIGHT or key == glfw.KEY_D) and action == glfw.PRESS:
             self.__snake.new_mov = "d"
-            print("d")
