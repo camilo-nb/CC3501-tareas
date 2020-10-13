@@ -1,0 +1,79 @@
+import sys
+
+import glfw
+from OpenGL.GL import *
+
+from data.mydata import d
+import lib.basic_shapes as bs
+import lib.easy_shaders as es
+import lib.scene_graph as sg
+import lib.transformations as tr
+from model.models import Snake, Chessboard, GameOver, Apple
+from controller.controller import Controller
+
+def start():
+    
+    if not glfw.init():
+        sys.exit()
+        
+    window = glfw.create_window(d["w"], d["h"], 'Snake', None, None)
+    if not window:
+        glfw.terminate()
+        sys.exit
+    glfw.make_context_current(window)
+    
+    controller = Controller()
+    chessboard = Chessboard(d["n"])
+    snake = Snake()
+    apple = Apple()
+    gameover = GameOver()
+    
+    controller.snake = snake
+    glfw.set_key_callback(window, controller.on_key)
+    
+    pipeline_transform = es.SimpleTransformShaderProgram()
+    pipeline_texture = es.SimpleTextureTransformShaderProgram()
+    glUseProgram(pipeline_texture.shaderProgram)
+                
+    glClearColor(0, 0, 0, 1.0)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    
+    t_last_update = 0
+    t_last_frame = 0
+    fps_limit = 1/d["fps"]
+    
+    while not glfw.window_should_close(window):
+        
+        t_now = glfw.get_time()
+        dt = t_now - t_last_update
+        
+        glfw.poll_events()
+        
+        if t_now - t_last_frame >= fps_limit:
+            
+            glfw.set_window_title(window, f'Snake [FPS: {1/(t_now - t_last_frame):.1f}]')
+            
+            glClear(GL_COLOR_BUFFER_BIT)
+            
+            if snake.is_alive:
+                glUseProgram(pipeline_texture.shaderProgram)
+                chessboard.draw(pipeline_texture)
+                snake.update(apple)
+                snake.draw(pipeline_texture)
+                glUseProgram(pipeline_transform.shaderProgram)
+                apple.draw(pipeline_transform)
+            
+            else:
+                glUseProgram(pipeline_texture.shaderProgram)
+                gameover.update(t_now - t_last_frame)
+                gameover.draw(pipeline_texture)
+            
+            glfw.swap_buffers(window)
+            
+            t_last_frame = t_now
+        
+        t_last_update = t_now
+        
+    glfw.terminate()

@@ -1,0 +1,229 @@
+import os
+
+import numpy as np
+from OpenGL.GL import *
+
+from data.mydata import d
+import lib.basic_shapes as bs
+import lib.easy_shaders as es
+import lib.scene_graph as sg
+import lib.transformations as tr
+from lib.playsound import playsound as ps
+
+class SnakePart():
+    
+    def __init__(self, path):
+        
+        gpu_part = es.toGPUShape(bs.createTextureQuad(path), GL_REPEAT, GL_NEAREST)
+
+        part = sg.SceneGraphNode("part")
+        part.transform = tr.matmul([tr.scale(1, d["w"]/d["h"], 1), tr.scale(1/d["n"], 1/d["n"], 1)])
+        part.childs += [gpu_part]
+        
+        part_tr = sg.SceneGraphNode("part_tr")
+        part_tr.transform = tr.identity()
+        part_tr.childs += [part]
+        
+        self.model = part_tr
+        
+    @staticmethod
+    def green(cls):
+        return cls(os.path.join("model", "actor", "green.png"))
+    @staticmethod
+    def head(cls):
+        return cls(os.path.join("model", "actor", "head_0.png"))
+    @staticmethod
+    def body(cls):
+        return cls(os.path.join("model", "actor", "body.png"))
+    @staticmethod
+    def curve(cls):
+        return cls(os.path.join("model", "actor", "curve.png"))
+    
+
+class Snake():
+    
+    def __init__(self):
+        
+        self.is_alive = True
+        self.time = 0
+        self.x = d["n"]//2
+        self.y = d["n"]//2
+        self.length = 1
+        self.dx = 1
+        self.dy = 0
+        
+        self.grid = np.full((d["n"], d["n"]), -1, dtype=int)
+        
+        self.grid[self.y][self.x] = self.time
+        
+        self.green = SnakePart.green(SnakePart)
+        self.head = SnakePart.head(SnakePart)
+        self.body = SnakePart.body(SnakePart)
+        self.curve = SnakePart.curve(SnakePart)
+        
+    def draw(self, pipeline):
+        
+        for j in range(len(self.grid)):
+            for i in range(len(self.grid)):
+                
+                if self.grid[j][i] < 0:
+                    continue
+                
+                elif self.time - self.grid[j][i] < self.length:
+                    
+                    # head
+                    if self.grid[j][i] == self.time:
+                        if d["n"] % 2 == 0:
+                            self.head.model.transform = tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0)
+                        else:
+                            self.head.model.transform = tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0)
+                        sg.drawSceneGraphNode(self.head.model, pipeline, "transform")
+                        
+                    else:
+                        
+                        # vertical body
+                        if 1 < j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j-1][i]-1) or \
+                            (self.grid[j][i] == self.grid[j+1][i]-1 and self.grid[j][i] == self.grid[j-1][i]+1):
+                            if d["n"] % 2 == 0:
+                                self.body.model.transform = tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0)
+                            else:
+                                self.body.model.transform = tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0)
+                            sg.drawSceneGraphNode(self.body.model, pipeline, "transform")
+
+                        # horizontal body
+                        elif 1 < i < d["n"] - 3 and (self.grid[j][i] == self.grid[j][i+1]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                            (self.grid[j][i] == self.grid[j][i+1]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
+                            if d["n"] % 2 == 0:
+                                self.body.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            else:
+                                self.body.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            sg.drawSceneGraphNode(self.body.model, pipeline, "transform")
+                        
+                        # top left curve
+                        elif 1 < i and j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                            (self.grid[j][i] == self.grid[j+1][i]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
+                            if d["n"] % 2 == 0:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            else:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
+                            
+                        # top right curve
+                        elif i < d["n"] - 3 and j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j][i+1]-1) or \
+                            (self.grid[j][i] == self.grid[j+1][i]-1 and self.grid[j][i] == self.grid[j][i+1]+1):
+                            if d["n"] % 2 == 0:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            else:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
+
+                        # bottom left curve
+                        elif 1 < i and 1 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                            (self.grid[j][i] == self.grid[j-1][i]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
+                            if d["n"] % 2 == 0:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(3*np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            else:
+                                self.curve.model.transform = tr.matmul(
+                                    [
+                                        tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0),
+                                        tr.rotationZ(3*np.pi/2),
+                                        tr.translate(0,0,0)
+                                    ]
+                                )
+                            sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
+                            
+                        # bottom right curve
+                        elif i < d["n"] - 5 and 1 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i+1]-1) or \
+                            (self.grid[j][i] == self.grid[j-1][i]-1 and self.grid[j][i] == self.grid[j][i+1]+1):
+                            if d["n"] % 2 == 0:
+                                self.curve.model.transform = tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0)
+                            else:
+                                self.curve.model.transform = tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0)
+                            sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
+
+                        else:
+                            if d["n"] % 2 == 0:
+                                self.green.model.transform = tr.translate((i-d["n"]//2 + 1 + 0.5)/d["n"], (j-d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0)
+                            else:
+                                self.green.model.transform = tr.translate((i-d["n"]//2 + 2)/d["n"], (j-d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0)
+                            sg.drawSceneGraphNode(self.green.model, pipeline, "transform")
+        
+    def grow(self):
+        pass
+        
+        
+    def die(self):
+        ps(np.random.choice([os.path.join("data", "doh.mp3"), os.path.join("data", "doh.mp3")]), block=False)
+        self.x, self.y = d["n"]//2, d["n"]//2
+        self.length = 1
+        
+    def tick(self):
+        self.time += 1
+        self.grid[self.y][self.x] = self.time
+       
+    def move(self):
+        self.x += self.dx
+        self.y += self.dy
+            
+    def apple_collide(self, apple):
+        if self.x == apple.x and self.y == apple.y:
+            ps(os.path.join("data", "mmm.mp3"), block=False)
+            apple.respawn(self)
+            self.length += 1
+            
+    def border_collide(self):
+        if self.x < 0 or self.x > d["n"]-3 or self.y < 0 or self.y > d["n"]-3:
+            self.die()
+            
+    def self_collide(self):
+        if self.time - self.grid[self.y][self.x] < self.length:
+            self.die()
+        
+    def update(self, apple):
+        self.tick()
+        self.move()
+        self.apple_collide(apple)
+        self.border_collide()
+        self.self_collide()
