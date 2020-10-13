@@ -1,3 +1,4 @@
+from numpy import cos
 from numpy.random import randint
 from OpenGL.GL import *
 
@@ -39,11 +40,11 @@ class Apple():
         self.model = apple_tr
         
         
-    def draw(self, pipeline):
+    def draw(self, pipeline, t):
         if d["n"] % 2 == 0:
-            self.model.transform = tr.translate((self.x - d["n"]//2 + 1 + 0.5)/d["n"], (self.y - d["n"]//2 + 1 + 0.5)/d["n"]*d["w"]/d["h"], 0)
+            self.model.transform = tr.translate((self.x - d["n"]//2 + 1 + 0.5)/d["n"], (self.y - d["n"]//2 + 1 + 0.5 + cos(2*t)/6)/d["n"]*d["w"]/d["h"], 0)
         else:
-            self.model.transform = tr.translate((self.x - d["n"]//2 + 2)/d["n"], (self.y - d["n"]//2 + 2)/d["n"]*d["w"]/d["h"], 0)
+            self.model.transform = tr.translate((self.x - d["n"]//2 + 1)/d["n"], (self.y - d["n"]//2 + 1 + cos(2*t)/6)/d["n"]*d["w"]/d["h"], 0)
         sg.drawSceneGraphNode(self.model, pipeline, "transform")
 
     def respawn(self, snake):

@@ -3,7 +3,6 @@ import sys
 
 from view.view import start
 from data.mydata import d
-from lib.playsound import playsound
 
 if __name__ == "__main__":
     
@@ -27,6 +26,7 @@ if __name__ == "__main__":
         "w": False,
         "h": False,
         "fps": False,
+        "s": False
     }
     
     for i, arg in enumerate(sys.argv):
@@ -111,19 +111,39 @@ if __name__ == "__main__":
                 d.dump()
                 args["fps"] = True
                 
+        if arg == "-s" or arg == "--sound":
+            
+            try:
+                
+                if sys.argv[i+1] == "on":
+                    d["sound"] = True
+                elif sys.argv[i+1] == "off":
+                    d["sound"] = False
+                else:
+                    raise Exception(f"{arg} must be on or off")
+                
+            except IndexError:
+                raise Exception(f"no {arg} argument given")
+                
+            else:
+                d.dump()
+                args["s"] = True
+                
     if args["n"]:
         
         if not "w" in d.data:
             d["w"] = 800
             d.dump()
         if not "h" in d.data:
-            d["h"] = 800
+            d["h"] = 600
             d.dump()
         if not "fps" in d.data:
             d["fps"] = 10
             d.dump()
-        
-        playsound(os.path.join("data", "hola.mp3"), block=False)
+        if not "s" in d.data:
+            d["s"] = True
+            d.dump()
+            
         start()
         
     else:

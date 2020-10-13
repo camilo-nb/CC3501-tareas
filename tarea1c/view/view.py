@@ -1,3 +1,4 @@
+import os
 import sys
 
 import glfw
@@ -10,8 +11,22 @@ import lib.scene_graph as sg
 import lib.transformations as tr
 from model.models import Snake, Chessboard, GameOver, Apple
 from controller.controller import Controller
+try:
+    if d["s"]:
+        try:
+            from lib.playsound import playsound
+        except ImportError:
+            d["s"] = False
+            d.dump()
+except KeyError:
+    pass
+    
 
 def start():
+    
+    d.load()
+    if d["s"]:
+        playsound(os.path.join("data", "hola.mp3"), block=False)
     
     if not glfw.init():
         sys.exit()
@@ -33,7 +48,6 @@ def start():
     
     pipeline_transform = es.SimpleTransformShaderProgram()
     pipeline_texture = es.SimpleTextureTransformShaderProgram()
-    glUseProgram(pipeline_texture.shaderProgram)
                 
     glClearColor(0, 0, 0, 1.0)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -53,7 +67,7 @@ def start():
         
         if t_now - t_last_frame >= fps_limit:
             
-            glfw.set_window_title(window, f'Snake [FPS: {1/(t_now - t_last_frame):.1f}]')
+            glfw.set_window_title(window, f'Snake [FPS: {1/(t_now - t_last_frame):.0f}]')
             
             glClear(GL_COLOR_BUFFER_BIT)
             
@@ -61,9 +75,9 @@ def start():
                 glUseProgram(pipeline_texture.shaderProgram)
                 chessboard.draw(pipeline_texture)
                 snake.update(apple)
-                snake.draw(pipeline_texture)
+                snake.draw(pipeline_texture, apple)
                 glUseProgram(pipeline_transform.shaderProgram)
-                apple.draw(pipeline_transform)
+                apple.draw(pipeline_transform, t_now)
             
             else:
                 glUseProgram(pipeline_texture.shaderProgram)

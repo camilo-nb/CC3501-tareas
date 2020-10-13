@@ -1,7 +1,10 @@
 {
-    "n": 32,
-    "w": 800,
-    "h": 600,
+    "snake": true,
+    "fun": true,
+    "n": 31,
+    "w": 720,
+    "h": 1080,
     "fps": 10,
-    "gameover": true
+    "s": true,
+    "sound": false
 }
