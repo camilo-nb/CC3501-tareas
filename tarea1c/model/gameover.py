@@ -1,5 +1,6 @@
 import os
 
+from numpy import exp as e
 from OpenGL.GL import *
 
 from data.mydata import d
@@ -24,11 +25,13 @@ class GameOver():
         
         self.model = gameover_r
         self.phi = 0
+        self.tick = 0
         
     def draw(self, pipeline):
         self.model.transform = tr.matmul([tr.rotationX(2 * self.phi), tr.rotationZ(self.phi)])
         sg.drawSceneGraphNode(self.model, pipeline, "transform")
         
-    def update(self, dt):
-        self.phi += dt
+    def update(self):
+        self.phi = e(self.tick)
+        self.tick = self.tick - 0.001 * e(0.5*self.tick)
         

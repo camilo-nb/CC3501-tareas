@@ -63,30 +63,40 @@ def start():
         t_now = glfw.get_time()
         dt = t_now - t_last_update
         
+        
         glfw.poll_events()
         
-        if t_now - t_last_frame >= fps_limit:
+        if t_now - t_last_frame >= fps_limit and snake.is_alive:
             
             glfw.set_window_title(window, f'Snake [FPS: {1/(t_now - t_last_frame):.0f}]')
             
             glClear(GL_COLOR_BUFFER_BIT)
             
-            if snake.is_alive:
-                glUseProgram(pipeline_texture.shaderProgram)
-                chessboard.draw(pipeline_texture)
-                snake.update(apple)
-                snake.draw(pipeline_texture, apple)
-                glUseProgram(pipeline_transform.shaderProgram)
-                apple.draw(pipeline_transform, t_now)
-            
-            else:
-                glUseProgram(pipeline_texture.shaderProgram)
-                gameover.update(t_now - t_last_frame)
-                gameover.draw(pipeline_texture)
+            glUseProgram(pipeline_texture.shaderProgram)
+            chessboard.draw(pipeline_texture)
+            snake.update(apple)
+            snake.draw(pipeline_texture, apple)
+            glUseProgram(pipeline_transform.shaderProgram)
+            apple.draw(pipeline_transform, t_now)
             
             glfw.swap_buffers(window)
             
             t_last_frame = t_now
+            
+        elif not snake.is_alive:
+
+            glClear(GL_COLOR_BUFFER_BIT)
+
+            glfw.set_window_title(window, f'Snake :(')
+            glUseProgram(pipeline_texture.shaderProgram)
+            gameover.update()
+            gameover.draw(pipeline_texture)
+            
+            glfw.swap_buffers(window)
+            
+            if snake.r:
+                glfw.terminate()
+                return start()
         
         t_last_update = t_now
         

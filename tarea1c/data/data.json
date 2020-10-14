@@ -1,9 +1,9 @@
 {
     "snake": true,
     "fun": true,
-    "n": 31,
-    "w": 720,
-    "h": 1080,
+    "n": 32,
+    "w": 1080,
+    "h": 720,
     "fps": 10,
     "s": true,
     "sound": false

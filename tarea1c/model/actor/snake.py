@@ -54,6 +54,8 @@ class Snake():
     def __init__(self):
         
         self.is_alive = True
+        self.f = False
+        self.r = False
         self.time = 0
         self.x = d["n"]//2
         self.y = d["n"]//2
@@ -62,6 +64,7 @@ class Snake():
         self.dy = 0
         self.ddx = 1
         self.ddy = 0
+        
         
         self.grid = np.full((d["n"], d["n"]), -1, dtype=int)
         
@@ -337,6 +340,7 @@ class Snake():
             playsound(os.path.join("data", "doh.mp3"), block=False)
         self.x, self.y = d["n"]//2, d["n"]//2
         self.length = 1
+        self.is_alive = False
         
     def tick(self):
         self.time += 1
