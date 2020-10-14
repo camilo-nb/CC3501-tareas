@@ -116,9 +116,9 @@ if __name__ == "__main__":
             try:
                 
                 if sys.argv[i+1] == "on":
-                    d["sound"] = True
+                    d["s"] = True
                 elif sys.argv[i+1] == "off":
-                    d["sound"] = False
+                    d["s"] = False
                 else:
                     raise Exception(f"{arg} must be on or off")
                 

@@ -8,15 +8,7 @@ import lib.basic_shapes as bs
 import lib.easy_shaders as es
 import lib.scene_graph as sg
 import lib.transformations as tr
-try:
-    if d["s"]:
-        try:
-            from lib.playsound import playsound
-        except ImportError:
-            d["s"] = False
-            d.dump()
-except KeyError:
-    pass
+
 class SnakePart():
     
     def __init__(self, path):
@@ -336,8 +328,18 @@ class Snake():
         
     def die(self):
         d.load()
-        if d["s"]:
-            playsound(os.path.join("data", "doh.mp3"), block=False)
+        try:
+            if d["s"]:
+                try:
+                    from lib.playsound import playsound
+                except KeyError:
+                    d["s"] = True
+                    d.dump()      
+                else:
+                    playsound(os.path.join("data", "doh.mp3"), block=False)
+        except KeyError:
+            d["s"] = False
+            d.dump()
         self.x, self.y = d["n"]//2, d["n"]//2
         self.length = 1
         self.is_alive = False
@@ -353,8 +355,18 @@ class Snake():
     def apple_collide(self, apple):
         if self.x == apple.x and self.y == apple.y:
             d.load()
-            if d["s"]:
-                playsound(os.path.join("data", "mmm.mp3"), block=False)
+            try:
+                if d["s"]:
+                    try:
+                        from lib.playsound import playsound
+                    except KeyError:
+                        d["s"] = True
+                        d.dump()      
+                    else:
+                        playsound(os.path.join("data", "mmm.mp3"), block=False)
+            except KeyError:
+                d["s"] = False
+                d.dump()
             apple.respawn(self)
             self.length += 1
             

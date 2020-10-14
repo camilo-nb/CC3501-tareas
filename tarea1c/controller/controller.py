@@ -1,3 +1,4 @@
+import os
 import sys
 
 import glfw
@@ -34,9 +35,9 @@ class Controller():
                 
         else:
             if key == glfw.KEY_F and action == glfw.PRESS:
-                glfw.terminate()
-                sys.exit
-                self.snake.f = True
+                if not self.snake.f:
+                    self.snake.f = True
             
             elif key == glfw.KEY_R and action == glfw.PRESS:
-                self.snake.r = True
+                if not self.snake.f:
+                    self.snake.r = True
