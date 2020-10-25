@@ -49,17 +49,15 @@ class Snake():
         self.f = False
         self.r = False
         self.time = 0
-        self.x = d["n"]//2
-        self.y = d["n"]//2
         self.length = 1
+        self.x = 0
+        self.y = 0
         self.dx = 1
         self.dy = 0
         self.ddx = 1
         self.ddy = 0
         
-        
         self.grid = np.full((d["n"], d["n"]), -1, dtype=int)
-        
         self.grid[self.y][self.x] = self.time
         
         self.green = SnakePart.green(SnakePart)
@@ -185,7 +183,7 @@ class Snake():
                     else:
                         
                         # vertical body
-                        if 1 < j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j-1][i]-1) or \
+                        if 0 < j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j-1][i]-1) or \
                             (self.grid[j][i] == self.grid[j+1][i]-1 and self.grid[j][i] == self.grid[j-1][i]+1):
                             if d["n"] % 2 == 0:
                                 self.body.model.transform = tr.matmul(
@@ -208,7 +206,7 @@ class Snake():
                             sg.drawSceneGraphNode(self.body.model, pipeline, "transform")
 
                         # horizontal body
-                        elif 1 < i < d["n"] - 3 and (self.grid[j][i] == self.grid[j][i+1]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                        elif 0 < i < d["n"] - 3 and (self.grid[j][i] == self.grid[j][i+1]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
                             (self.grid[j][i] == self.grid[j][i+1]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
                             if d["n"] % 2 == 0:
                                 self.body.model.transform = tr.matmul(
@@ -231,7 +229,7 @@ class Snake():
                             sg.drawSceneGraphNode(self.body.model, pipeline, "transform")
                         
                         # top left curve
-                        elif 1 < i and j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                        elif 0 < i and j < d["n"] - 3 and (self.grid[j][i] == self.grid[j+1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
                             (self.grid[j][i] == self.grid[j+1][i]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
                             if d["n"] % 2 == 0:
                                 self.curve.model.transform = tr.matmul(
@@ -275,7 +273,7 @@ class Snake():
                             sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
 
                         # bottom left curve
-                        elif 1 < i and 1 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
+                        elif 0 < i and 0 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i-1]-1) or \
                             (self.grid[j][i] == self.grid[j-1][i]-1 and self.grid[j][i] == self.grid[j][i-1]+1):
                             if d["n"] % 2 == 0:
                                 self.curve.model.transform = tr.matmul(
@@ -298,7 +296,7 @@ class Snake():
                             sg.drawSceneGraphNode(self.curve.model, pipeline, "transform")
                             
                         # bottom right curve
-                        elif i < d["n"] - 3 and 1 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i+1]-1) or \
+                        elif i < d["n"] - 3 and 0 < j and (self.grid[j][i] == self.grid[j-1][i]+1 and self.grid[j][i] == self.grid[j][i+1]-1) or \
                             (self.grid[j][i] == self.grid[j-1][i]-1 and self.grid[j][i] == self.grid[j][i+1]+1):
                             if d["n"] % 2 == 0:
                                 self.curve.model.transform = tr.matmul(
@@ -340,7 +338,7 @@ class Snake():
         except KeyError:
             d["s"] = False
             d.dump()
-        self.x, self.y = d["n"]//2, d["n"]//2
+        self.x, self.y = 0, 0
         self.length = 1
         self.is_alive = False
         

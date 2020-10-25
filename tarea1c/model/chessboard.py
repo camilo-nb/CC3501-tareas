@@ -24,7 +24,6 @@ class Chessboard():
         chessboard_tr.childs += [chessboard]
 
         self.model = chessboard_tr
-
                     
     def draw(self, pipeline):
         self.model.transform = tr.translate(0, 0, 0)

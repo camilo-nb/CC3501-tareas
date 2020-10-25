@@ -37,7 +37,7 @@ def start():
         if not glfw.init():
             sys.exit()
             
-        window = glfw.create_window(d["w"], d["h"], 'Snake', None, None)
+        window = glfw.create_window(d["w"], d["h"], '---===e Snake e===---', None, None)
         if not window:
             glfw.terminate()
             sys.exit
@@ -74,7 +74,7 @@ def start():
             
             if t_now - t_last_frame >= fps_limit and snake.is_alive:
                 
-                glfw.set_window_title(window, f'Snake [FPS: {1/(t_now - t_last_frame):.0f}]')
+                glfw.set_window_title(window, f'---===e Snake [FPS: {1/(t_now - t_last_frame):.0f}]')
                 
                 glClear(GL_COLOR_BUFFER_BIT)
                 
@@ -93,7 +93,7 @@ def start():
 
                 glClear(GL_COLOR_BUFFER_BIT)
 
-                glfw.set_window_title(window, f'Snake :(')
+                glfw.set_window_title(window, u'(╯°□°）╯︵ ┻━┻')
                 glUseProgram(pipeline_texture.shaderProgram)
                 gameover.update()
                 gameover.draw(pipeline_texture)

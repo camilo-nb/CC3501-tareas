@@ -14,6 +14,7 @@ class Controller():
             return
 
         if key == glfw.KEY_ESCAPE:
+            glfw.terminate()
             sys.exit()
         
         if self.snake.is_alive:

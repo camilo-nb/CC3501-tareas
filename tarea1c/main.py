@@ -20,6 +20,7 @@ if __name__ == "__main__":
                                                                                                            
         """
     )
+    # https://ascii.co.uk/art/snake
     
     args = {
         "n": False,
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         
     else:
         raise Exception(
-            """\n
+            u"""\n
             ┌──────────────────────────────────────────────┐
             │         please enter the dimensions          │
             │             of the square grid               │
