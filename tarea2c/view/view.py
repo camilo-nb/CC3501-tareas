@@ -10,7 +10,7 @@ import lib.lighting_shaders as ls
 
 from view.camera import Camera
 from ctr.controller import Controller
-from mod.models import Snake, Floor
+from mod.models import Snake, Floor, Food
 
 def view():
     
@@ -25,6 +25,7 @@ def view():
     camera = Camera(); controller.camera = camera
     snake = Snake(); controller.snake = snake; camera.snake = snake
     floor = Floor()
+    food = Food()
     
     texture_pipeline = es.SimpleTextureModelViewProjectionShaderProgram()
     lighting_pipeline = ls.SimpleTexturePhongShaderProgram()
@@ -50,13 +51,14 @@ def view():
         time_last = time_now
 
         while time_delta >= 1.0:
-            snake.update()
+            snake.update(food)
             updates += 1
             time_delta -= 1.0
         #snake.update()
         view = camera.view
         snake.draw(lighting_pipeline, projection, view)
         floor.draw(texture_pipeline, projection, view)
+        food.draw(texture_pipeline, projection, view)
         
         frames += 1
         glfw.swap_buffers(window)
