@@ -9,34 +9,36 @@ import lib.easy_shaders as es
 import lib.transformations as tr
 import lib.object_handler as oh
 
-class Head():
+class Pokeball():
     
     def __init__(self):
-        self.x, self.y, self.z = 0, 0, 1 # position coordinates
+        self.x, self.y, self.z = -90, 0, 1 # position coordinates
         self.rho, self.phi = 0.01, 0 # direction vector
         self.bend = np.pi/180*2*2*2 # how much to bend when turning
         self.turn = 0 # -1:right, 0:straight, 1:left
         self.time = 0
-        self.s = 2 # separation
+        self.s = 2 # scale
         self.GPU = es.toGPUShape(oh.readOBJ2(os.path.join('mod','tex','pokeball.obj'), os.path.join('mod','tex','pokeball.png')), GL_REPEAT, GL_NEAREST)
         self.transform = np.matmul(np.matmul(tr.translate(*self.pos), tr.uniformScale(self.s/2)), tr.rotationZ(self.phi))
     @property
     def pos(self): return self.x, self.y, self.z
     
-    def draw(self, pipeline, projection, view):
+    def draw(self, pipeline, projection, view, food):
+        if food.status == 'pikachu': light_pos = [food.x, food.y, food.z]; shininess = 1
+        else: light_pos = [50, 50,50]; shininess = 10000
         glUseProgram(pipeline.shaderProgram)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "La"), 0.55, 0.55, 0.55)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ld"), 0.65, 0.65, 0.65)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ls"), 0.4, 0.4, 0.4)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "La"), 0.5, 0.5, 0.5)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ld"), 0.1, 0.1, 0.1)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ka"), 0.25, 0.25, 0.25)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Kd"), 0.6, 0.6, 0.6)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ks"), 0.6, 0.6, 0.6)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "lightPosition"), 50,50 ,50)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ks"), 0.9, 0.9, 0.9)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "lightPosition"), *light_pos)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "viewPosition"), *self.pos)
-        glUniform1ui(glGetUniformLocation(pipeline.shaderProgram, "shininess"), 100000)
+        glUniform1ui(glGetUniformLocation(pipeline.shaderProgram, "shininess"), shininess)
         glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "constantAttenuation"), 0.001)
-        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "linearAttenuation"), 0.0001)
-        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "quadraticAttenuation"), 0.0001)
+        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "linearAttenuation"), 0.001)
+        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "quadraticAttenuation"), 0.001)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, self.transform)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "view"), 1, GL_TRUE, view)
@@ -79,7 +81,7 @@ class Snake():
     
     def __init__(self):
         self.alive = True
-        self.head = Head()
+        self.head = Pokeball()
         self.body = deque()
         self.length = 1
         self.init_tail = 0
@@ -94,6 +96,8 @@ class Snake():
     def y(self): return self.head.y
     @property
     def z(self): return self.head.z
+    @z.setter
+    def z(self, value): self.head.z = value
     @property
     def rho(self): return self.head.rho
     @property
@@ -101,16 +105,16 @@ class Snake():
     @property
     def tail(self): return self.body[-1]
     
-    def draw(self, pipeline, projection, view):
-        if not self.alive: return
-        self.head.draw(pipeline, projection, view)
-        for part in self.body: part.draw(pipeline, projection, view)
+    def draw(self, pipeline, projection, view, food):
+        #if not self.alive: return
+        self.head.draw(pipeline, projection, view, food)
+        for part in self.body: part.draw(pipeline, projection, view, food)
 
     def turn_right(self): self.head.turn_right()
     def turn_straight(self): self.head.turn_straight()
     def turn_left(self): self.head.turn_left()
     def slither(self):
-        if not self.alive: return
+        #if not self.alive: return
         self.head.update()
         self.body.appendleft(deepcopy(self.head))
         self.head.ahead()
@@ -122,6 +126,7 @@ class Snake():
                 self.body.append(part)
 
     def grow(self):
+        #if not self.alive: return
         self.body.appendleft(deepcopy(self.head))
         self.head.ahead()
         self.length += 1
@@ -137,8 +142,23 @@ class Snake():
         for part in parts:
             if (self.head.x - part.x)**2 + (self.head.y - part.y)**2 < self.head.s:
                 self.alive = False
+
+    def border_collide(self):
+        if abs(self.x) > 100 or abs(self.y) > 100:
+            self.die()
+    
+    def fall(self):
+        if self.alive: return
+        self.dead_since += 1
+        self.z  = self.z - (1-np.exp(-self.dead_since))
+    
+    def die(self):
+        self.alive = False
+        self.dead_since = 0
     
     def update(self, food):
         self.food_collide(food)
         self.self_collide()
+        self.border_collide()
         self.slither()
+        self.fall()

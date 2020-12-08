@@ -10,26 +10,27 @@ import lib.lighting_shaders as ls
 
 from view.camera import Camera
 from ctr.controller import Controller
-from mod.models import Snake, Floor, Food
+from mod.models import Snake, Floor, Food, Wall, Water
 
 def view():
     
     if not glfw.init(): sys.exit()
     
-    WIDTH = 800; HEIGHT = 800
+    WIDTH = 1000; HEIGHT = 1000
     window = glfw.create_window(WIDTH, HEIGHT, 'SNAKE 3D', None, None)
     if not window: glfw.terminate(); sys.exit()
     glfw.make_context_current(window)
     
     controller = Controller(); glfw.set_key_callback(window, controller.on_key)
-    camera = Camera(); controller.camera = camera
+    camera = Camera(); camera.w = WIDTH; camera.h = HEIGHT; controller.camera = camera
     snake = Snake(); controller.snake = snake; camera.snake = snake
     floor = Floor()
     food = Food()
+    wall = Wall()
+    water = Water()
     
-    texture_pipeline = es.SimpleTextureModelViewProjectionShaderProgram()
-    lighting_pipeline = ls.SimpleTexturePhongShaderProgram()
-    projection = tr.perspective(45, float(WIDTH)/float(HEIGHT), 0.1, 100)
+    lighting_pipeline = ls.SimplePhongShaderProgram()
+    lighting_texture_pipeline = ls.SimpleTexturePhongShaderProgram()
     glClearColor(0.85, 0.85, 0.85, 1.0)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -52,13 +53,16 @@ def view():
 
         while time_delta >= 1.0:
             snake.update(food)
+            food.update()
             updates += 1
             time_delta -= 1.0
         #snake.update()
-        view = camera.view
-        snake.draw(lighting_pipeline, projection, view)
-        floor.draw(texture_pipeline, projection, view)
-        food.draw(texture_pipeline, projection, view)
+        projection, view = camera.projection, camera.view
+        snake.draw(lighting_texture_pipeline, projection, view, food)
+        floor.draw(lighting_texture_pipeline, projection, view, food)
+        wall.draw(lighting_texture_pipeline, projection, view, food)
+        water.draw(lighting_texture_pipeline, projection, view, food)
+        food.draw(lighting_pipeline, projection, view)
         
         frames += 1
         glfw.swap_buffers(window)
