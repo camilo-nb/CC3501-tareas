@@ -18,7 +18,7 @@ def start():
     if not glfw.init(): sys.exit()
     
     WIDTH = 1000; HEIGHT = 1000
-    window = glfw.create_window(WIDTH, HEIGHT, 'SNAKE 3D', None, None)
+    window = glfw.create_window(WIDTH, HEIGHT, 'SNoKéMoN', None, None)
     if not window: glfw.terminate(); sys.exit()
     glfw.make_context_current(window)
     
@@ -35,21 +35,13 @@ def start():
     texture_pipeline = es.SimpleTextureModelViewProjectionShaderProgram()
     lighting_pipeline = ls.SimplePhongShaderProgram()
     lighting_texture_pipeline = ls.SimpleTexturePhongShaderProgram()
-    glClearColor(0.0, 0.0, 0.0, 1.0)
-    glEnable(GL_DEPTH_TEST)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+    glClearColor(0.0, 0.0, 0.0, 1.0); glEnable(GL_DEPTH_TEST); glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
     
-    FPS_LIMIT = 1.0 / 30.0
-    frames = 0
-    updates = 0 
-    timer = 0
-    time_last = 0
-    time_delta = 0
-    time_now = 0
+    FPS_LIMIT = 1.0 / 30.0; frames = 0; updates = 0 
+    timer = 0; time_last = 0; time_delta = 0; time_now = 0
     
     while not glfw.window_should_close(window):
-        glfw.poll_events()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glfw.poll_events(); glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         time_now = glfw.get_time()
         time_delta += (time_now - time_last) / FPS_LIMIT
@@ -61,8 +53,7 @@ def start():
                 food.update()
             else:
                 game_over.update()
-            updates += 1
-            time_delta -= 1.0
+            updates += 1; time_delta -= 1.0
         if snake.alive:
             projection, view = camera.projection, camera.view
             snake.draw(lighting_texture_pipeline, projection, view, food)
@@ -82,10 +73,7 @@ def start():
         glfw.swap_buffers(window)
         
         if glfw.get_time() - timer > 1.0:
-            timer += 1
-            print(f"FPS: {frames} Updates: {updates}")
-            updates = 0
-            frames = 0
+            timer += 1; updates = 0; frames = 0
         
     glfw.terminate()
     if controller.restart: start()
