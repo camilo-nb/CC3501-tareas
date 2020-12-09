@@ -12,7 +12,7 @@ import lib.object_handler as oh
 class Pokeball():
     
     def __init__(self):
-        self.x, self.y, self.z = -90, 0, 1 # position coordinates
+        self.x, self.y, self.z = -99, 0, 1 # position coordinates
         self.rho, self.phi = 0.01, 0 # direction vector
         self.bend = np.pi/180*2*2*2 # how much to bend when turning
         self.turn = 0 # -1:right, 0:straight, 1:left
@@ -25,12 +25,12 @@ class Pokeball():
     
     def draw(self, pipeline, projection, view, food):
         if food.status == 'pikachu': light_pos = [food.x, food.y, food.z]; shininess = 1
-        else: light_pos = [50, 50,50]; shininess = 10000
+        else: light_pos = [50, 50, 50]; shininess = 10000
         glUseProgram(pipeline.shaderProgram)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "La"), 0.5, 0.5, 0.5)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ld"), 0.1, 0.1, 0.1)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "La"), 0.6, 0.6, 0.6)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ld"), 0.2, 0.2, 0.2)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
-        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ka"), 0.25, 0.25, 0.25)
+        glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ka"), 0.4, 0.4, 0.4)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Kd"), 0.6, 0.6, 0.6)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "Ks"), 0.9, 0.9, 0.9)
         glUniform3f(glGetUniformLocation(pipeline.shaderProgram, "lightPosition"), *light_pos)
@@ -38,7 +38,7 @@ class Pokeball():
         glUniform1ui(glGetUniformLocation(pipeline.shaderProgram, "shininess"), shininess)
         glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "constantAttenuation"), 0.001)
         glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "linearAttenuation"), 0.001)
-        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "quadraticAttenuation"), 0.001)
+        glUniform1f(glGetUniformLocation(pipeline.shaderProgram, "quadraticAttenuation"), 0.00001)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, self.transform)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
         glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "view"), 1, GL_TRUE, view)
@@ -84,6 +84,7 @@ class Snake():
         self.head = Pokeball()
         self.body = deque()
         self.length = 1
+        self.time = 0
         self.init_tail = 0
         while self.init_tail:
             self.grow()
@@ -114,7 +115,7 @@ class Snake():
     def turn_straight(self): self.head.turn_straight()
     def turn_left(self): self.head.turn_left()
     def slither(self):
-        #if not self.alive: return
+        if not self.alive: return
         self.head.update()
         self.body.appendleft(deepcopy(self.head))
         self.head.ahead()
@@ -126,25 +127,29 @@ class Snake():
                 self.body.append(part)
 
     def grow(self):
-        #if not self.alive: return
+        if not self.alive: return
         self.body.appendleft(deepcopy(self.head))
         self.head.ahead()
         self.length += 1
     
-    def food_collide(self, food):
-        if abs(self.x - food.x) < 1 and abs(self.y - food.y) < self.head.s:
+    def food_collide(self, food, obstacle):
+        if abs(self.x - food.x) < self.head.s and abs(self.y - food.y) < self.head.s:
             self.grow()
-            food.respawn(self)
+            food.respawn(self, obstacle)
             
     def self_collide(self):
         parts = iter(self.body)
         _=next(parts,None)
         for part in parts:
             if (self.head.x - part.x)**2 + (self.head.y - part.y)**2 < self.head.s:
-                self.alive = False
+                self.die()
 
     def border_collide(self):
         if abs(self.x) > 100 or abs(self.y) > 100:
+            self.die()
+    
+    def obstacle_collide(self, obstacle):
+        if abs(self.x - obstacle.x) < obstacle.s*1.1 and abs(self.y - obstacle.y) < obstacle.s*1.1:
             self.die()
     
     def fall(self):
@@ -156,9 +161,12 @@ class Snake():
         self.alive = False
         self.dead_since = 0
     
-    def update(self, food):
-        self.food_collide(food)
+    def update(self, food, obstacle):
+        self.time += 1
+        if self.time < 200: return
+        self.food_collide(food, obstacle)
         self.self_collide()
         self.border_collide()
+        self.obstacle_collide(obstacle)
         self.slither()
         self.fall()

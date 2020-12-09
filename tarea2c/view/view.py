@@ -1,4 +1,5 @@
 import sys
+import time
 
 import glfw
 from OpenGL.GL import *
@@ -10,9 +11,9 @@ import lib.lighting_shaders as ls
 
 from view.camera import Camera
 from ctr.controller import Controller
-from mod.models import Snake, Floor, Food, Wall, Water
+from mod.models import Snake, Floor, Food, Wall, Water, GameOver, Obstacle
 
-def view():
+def start():
     
     if not glfw.init(): sys.exit()
     
@@ -28,10 +29,13 @@ def view():
     food = Food()
     wall = Wall()
     water = Water()
+    game_over = GameOver()
+    obstacle = Obstacle()
     
+    texture_pipeline = es.SimpleTextureModelViewProjectionShaderProgram()
     lighting_pipeline = ls.SimplePhongShaderProgram()
     lighting_texture_pipeline = ls.SimpleTexturePhongShaderProgram()
-    glClearColor(0.85, 0.85, 0.85, 1.0)
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
     
@@ -52,18 +56,28 @@ def view():
         time_last = time_now
 
         while time_delta >= 1.0:
-            snake.update(food)
-            food.update()
+            if snake.alive:
+                snake.update(food, obstacle)
+                food.update()
+            else:
+                game_over.update()
             updates += 1
             time_delta -= 1.0
-        #snake.update()
-        projection, view = camera.projection, camera.view
-        snake.draw(lighting_texture_pipeline, projection, view, food)
+        if snake.alive:
+            projection, view = camera.projection, camera.view
+            snake.draw(lighting_texture_pipeline, projection, view, food)
+        else:
+            camera.game_over_view()
+            projection, view = camera.projection, camera.view
+            game_over.draw(texture_pipeline, projection, view)
+            if controller.restart: break
+        
+        obstacle.draw(lighting_texture_pipeline, projection, view, food)
         floor.draw(lighting_texture_pipeline, projection, view, food)
         wall.draw(lighting_texture_pipeline, projection, view, food)
         water.draw(lighting_texture_pipeline, projection, view, food)
         food.draw(lighting_pipeline, projection, view)
-        
+            
         frames += 1
         glfw.swap_buffers(window)
         
@@ -74,3 +88,4 @@ def view():
             frames = 0
         
     glfw.terminate()
+    if controller.restart: start()

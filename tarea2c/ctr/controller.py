@@ -10,6 +10,7 @@ class Controller():
     def __init__(self):
         self.snake = None
         self.camera = None
+        self.restart = False
         
     def on_key(self, window, key, scancode, action, mods):
         if not (action == glfw.REPEAT or action == glfw.PRESS or action == glfw.RELEASE): return
@@ -31,3 +32,7 @@ class Controller():
         if key == glfw.KEY_R and action == glfw.PRESS: self.camera.snake_view()
         elif key == glfw.KEY_E and action == glfw.PRESS: self.camera.top_view()
         elif key == glfw.KEY_T and action == glfw.PRESS: self.camera.diagonal_view()
+        
+        if not self.snake.alive:
+            if key == glfw.KEY_ENTER and action == glfw.PRESS:
+                self.restart = True

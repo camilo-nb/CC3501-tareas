@@ -91,11 +91,11 @@ class Pikachu():
 class Food():
     
     def __init__(self):
-        self.x, self.y = np.random.randint(-25, 25, 2)
+        self.x, self.y = 0, 0
         self.z = 1
         self.time = 0
         self.tick = np.pi/180*2
-        self.s = 1
+        self.s = 3
         self.models = {
             'charmander' : Charmander(),
             'bulbasaur' : Bulbasaur(),
@@ -103,7 +103,7 @@ class Food():
             'pikachu' : Pikachu()
         }
         self.list = ['charmander', 'bulbasaur', 'squirtle', 'pikachu']
-        self.prob = [0.3, 0.3, 0.3, 0.1]
+        self.prob = [0, 0, 0, 1]
         self.choice_model()
         self.GPU = es.toGPUShape(bs.createTextureCube(os.path.join('mod','tex','food.png')), GL_REPEAT, GL_LINEAR)
         self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))
@@ -118,15 +118,14 @@ class Food():
     def update(self):
         self.time += self.tick
         self.z = np.exp(2*np.sin(2*self.time))/4
-        self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))
-        
-    def respawn(self, snake):
+        self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))        
+   
+    def respawn(self, snake, obstacle):
         self.choice_model()
-        self.x, self.y = np.random.randint(-25, 25, 2)
-        self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))
-        parts = iter(snake.body)
-        _=next(parts,None)
+        x, y = self.x, self.y; self.x, self.y = np.random.uniform(-97.9, 97.9, 2)
+        if (self.x - x)**2 + (self.y - y)**2 < self.s**2: self.respawn(snake, obstacle); return
+        if (self.x - obstacle.x)**2 + (self.y - obstacle.x)**2 < self.s**2: self.respawn(snake, obstacle); return
+        parts = iter(snake.body); _=next(parts,None)
         for part in parts:
-            if (self.x - part.x)**2 + (self.y - part.y)**2 < snake.head.s**2:
-                self.respawn(snake)
-                break
+            if (self.x - part.x)**2 + (self.y - part.y)**2 < self.s**2: self.respawn(snake, obstacle); return
+        self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))
