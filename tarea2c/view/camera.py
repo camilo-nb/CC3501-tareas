@@ -23,10 +23,10 @@ class Camera():
     
     @property
     def projection(self):
-        if self.camera == 0: return tr.perspective(70, float(self.w)/float(self.h), 0.1, 400)
-        elif self.camera == 1: return tr.perspective(45, float(self.w)/float(self.h), 0.1, 400)
-        elif self.camera == 2: return tr.perspective(90, float(self.w)/float(self.h), 0.1, 400)
-        elif self.camera == 3: return tr.perspective(45, float(self.w)/float(self.h), 0.1, 400)
+        if self.camera == 0: return tr.perspective(70, float(self.w)/float(self.h), 0.01, 400)
+        elif self.camera == 1: return tr.perspective(45, float(self.w)/float(self.h), 0.01, 400)
+        elif self.camera == 2: return tr.perspective(90, float(self.w)/float(self.h), 0.01, 400)
+        elif self.camera == 3: return tr.perspective(45, float(self.w)/float(self.h), 0.01, 400)
     
     def snake_view(self): self.camera = 0
     def top_view(self): self.camera = 1

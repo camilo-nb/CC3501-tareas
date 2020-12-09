@@ -10,7 +10,7 @@ import lib.object_handler as oh
 class Obstacle():
     
     def __init__(self):
-        self.x, self.y = np.random.uniform(-97.9, 97.9, 2)
+        self.x, self.y = np.random.uniform(-50.0, 50.0, 2)
         self.s = 3
         self.z = self.s
         self.GPU = es.toGPUShape(oh.readOBJ2(os.path.join('mod','tex','obstacle.obj'), os.path.join('mod','tex','obstacle.png')), GL_REPEAT, GL_NEAREST)
