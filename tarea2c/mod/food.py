@@ -103,7 +103,7 @@ class Food():
             'pikachu' : Pikachu()
         }
         self.list = ['charmander', 'bulbasaur', 'squirtle', 'pikachu']
-        self.prob = [0, 0, 0, 1]
+        self.prob = [0.3, 0.3, 0.3, 0.1]
         self.choice_model()
         self.GPU = es.toGPUShape(bs.createTextureCube(os.path.join('mod','tex','food.png')), GL_REPEAT, GL_LINEAR)
         self.transform = np.matmul(tr.translate(self.x,self.y,self.z), np.matmul(tr.rotationZ(self.time*4), np.matmul(tr.rotationX(np.pi/2), tr.uniformScale(self.s))))
