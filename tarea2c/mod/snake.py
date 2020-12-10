@@ -133,7 +133,7 @@ class Snake():
         self.length += 1
     
     def food_collide(self, food, obstacle):
-        if abs(self.x - food.x) < self.head.s and abs(self.y - food.y) < self.head.s:
+        if (self.x - food.x)**2+(self.y - food.y)**2 < self.head.s**2:
             self.grow()
             food.respawn(self, obstacle)
             
