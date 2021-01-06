@@ -52,7 +52,7 @@ from scipy.sparse import dok_matrix
 from scipy.sparse.linalg import spsolve
 
 __author__ = "Camilo Núñez Barra"
-print(sys.argv)
+
 # Handling input
 if len(sys.argv) != 6: raise Exception("Invalid length of arguments. Follow:\n$ python bloom_effect.py image_filename N R G B")
 im_filename = sys.argv[1]
