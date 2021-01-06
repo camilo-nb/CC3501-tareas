@@ -18,11 +18,11 @@ image_filename : string
     Name of the image file to be applied the effect.
 N : unsigned integer
     Light blur disk radius (effect range).
-R : 8-bit integer
+R : 8-bit unsigned integer
     Light red channel value.
-G : 8-bit integer
+G : 8-bit unsigned integer
     Light green channel value.
-B : 8-bit integer
+B : 8-bit unsigned integer
     Light blue channel value.
 
 Returns
@@ -48,9 +48,11 @@ import sys
 
 import numpy as np
 from PIL import Image
+from scipy.sparse import dok_matrix
+from scipy.sparse.linalg import spsolve
 
 __author__ = "Camilo Núñez Barra"
-
+print(sys.argv)
 # Handling input
 if len(sys.argv) != 6: raise Exception("Invalid length of arguments. Follow:\n$ python bloom_effect.py image_filename N R G B")
 im_filename = sys.argv[1]
@@ -58,33 +60,27 @@ r = int(sys.argv[2])
 color = np.array(sys.argv[3:6], dtype=np.uint8)
 
 im = Image.open(im_filename)
-rgb = np.array(im.convert('RGB'), dtype=np.uint8) # RGB 0..255
+rgb = np.array(im.convert("RGB"), dtype=np.uint8) # RGB 0..255
 rgb_ = rgb.astype(float)/255 # RGB 0..1
-if im.mode == 'RGBA': alpha = im.split()[-1]
 
-target = np.logical_and.reduce((rgb == color), axis=2, dtype=np.uint8) # Light (Dirichlet boundary conditions)
-unknown = np.zeros_like(target) # Pixels to blur
-k2ij, ij2k = {}, {}; k = 0 # Bijection: coordinates (i,j) <-> label k (for pixels unknown)
+# Target (Dirichlet boundary conditions)
+light = np.logical_and.reduce((rgb == color), axis=2, dtype=np.uint8)
+ij2k = {}; k = 0 # Bijection: coordinates (i,j) <-> label k (unknowns)
 
-nx, ny = target.shape
+nx, ny = light.shape
 for i, j in np.ndindex(nx,ny):
-    
     y, x = np.ogrid[-i:nx-i,-j:ny-j] # Axes of blur disk centered on each pixel
-    mask = x*x + y*y <= r*r # Blur disk mask within range
-    if target[mask].sum(): # Positive if pixel within blur range. Zero if not.
-        
-        unknown[i][j] = np.maximum(1-target[i][j], 0) # Check if it's light or pixel to blur
-        if unknown[i][j]:
-            k+=1
-            k2ij[k] = (i,j)
-            ij2k[(i,j)] = k
+    disk = x*x + y*y <= r*r # Blur disk mask within range
+    # >0 if pixel within range. =0 if not && Check if it's light or pixel to blur
+    if light[disk].sum() and np.maximum(1-light[i][j], 0): ij2k[(i,j)] = (k:=k+1)
 
 # Light follows Laplace's equation, discretized using finite
 # difference method. Solve A*x=b in order find the unknowns.
-A = np.zeros((k,k,3), dtype=float) # Coefficient of the unknowns
+A = np.empty(3, dtype=object) # Coefficient of the unknowns
 b = np.zeros((k,3), dtype=float) # Right side (Dirichlet boundary conditions)
+for i in range(3): A[i] = dok_matrix((k,k), dtype=float) # Sparse matrix
 
-for k, (i,j) in k2ij.items():
+for (i,j), k in ij2k.items():
 
     # Five-point stencil
     ku = ij2k.get((i,j+1)) # up
@@ -93,35 +89,34 @@ for k, (i,j) in k2ij.items():
     kr = ij2k.get((i+1,j)) # right
 
     # Three cases:
-    # target=0 (no light -> no contribution)
-    # target=1 (light -> Dirichlet)
+    # light=0 (no light -> no contribution)
+    # light=1 (light -> Dirichlet)
     # i or j index out of range (neither -> no contribution)
-    try: bu = target[i][j+1] * rgb_[i][j+1]
-    except IndexError: bu = np.zeros(3)
-    try: bd = target[i][j-1] * rgb_[i][j-1]
-    except IndexError: bd = np.zeros(3)
-    try: bl = target[i-1][j] * rgb_[i-1][j]
-    except IndexError: bl = np.zeros(3)
-    try: br = target[i+1][j] * rgb_[i+1][j]
-    except IndexError: br = np.zeros(3)
+    try: bu = light[i][j+1] * rgb_[i][j+1]
+    except IndexError: bu = np.zeros(3, dtype=float)
+    try: bd = light[i][j-1] * rgb_[i][j-1]
+    except IndexError: bd = np.zeros(3, dtype=float)
+    try: bl = light[i-1][j] * rgb_[i-1][j]
+    except IndexError: bl = np.zeros(3, dtype=float)
+    try: br = light[i+1][j] * rgb_[i+1][j]
+    except IndexError: br = np.zeros(3, dtype=float)
 
     # k_ is None if it is not an unknown
-    if ku: A[k-1,ku-1] = np.ones(3)
-    if kd: A[k-1,kd-1] = np.ones(3)
-    if kl: A[k-1,kl-1] = np.ones(3)
-    if kr: A[k-1,kr-1] = np.ones(3)
-    A[k-1, k-1] = -4*np.ones(3)
+    if ku: A[0][k-1,ku-1], A[1][k-1,ku-1], A[2][k-1,ku-1] = np.ones(3, dtype=float)
+    if kd: A[0][k-1,kd-1], A[1][k-1,kd-1], A[2][k-1,kd-1] = np.ones(3, dtype=float)
+    if kl: A[0][k-1,kl-1], A[1][k-1,kl-1], A[2][k-1,kl-1] = np.ones(3, dtype=float)
+    if kr: A[0][k-1,kr-1], A[1][k-1,kr-1], A[2][k-1,kr-1] = np.ones(3, dtype=float)
+    A[0][k-1, k-1], A[1][k-1, k-1], A[2][k-1, k-1] = -4*np.ones(3, dtype=float)
     b[k-1] = -bu-bd-bl-br
 
-# C'mon NumPy, hurry up!
-x = np.linalg.solve(A.T, b.T)
+x = np.empty((A.shape[0], A[0].shape[0]))
+for i in np.arange(A.shape[0]): x[i] = spsolve(A[i].tocsr(), b.transpose()[i])
 
 # Add up light -> blur disks
-for k, (i,j) in k2ij.items(): rgb_[i][j] += x.T[k-1]
-np.clip(rgb_,0,1,out=rgb_)
-rgb = (rgb_*255.999).astype(np.uint8)
+for (i,j), k in ij2k.items(): rgb_[i][j] += x.T[k-1]
+rgb = (np.clip(rgb_,0,1)*255.999).astype(np.uint8) # RGB 0..1 to 0..255
 
 fn, e = os.path.splitext(im_filename)
 im_out = Image.fromarray(rgb)
-if im.mode == 'RGBA': im_out.putalpha(alpha)
-im_out.save(fn+'_out'+e)
+if im.mode == "RGBA": im_out.putalpha(im.split()[-1])
+im_out.save(fn+"_out"+e)
